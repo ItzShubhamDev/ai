@@ -1,16 +1,12 @@
+import { CoreMessage } from "ai";
 import mongoose, { Schema } from "mongoose";
 
 export type Chats = {
-    _id: string;
+    _id: mongoose.Types.ObjectId;
     name: string;
-    messages: Message[];
+    messages: CoreMessage[];
     createdAt: string;
     updatedAt: string;
-}
-
-export type Message = {
-    role: string;
-    content: string;
 }
 
 const ChatsSchema = new Schema<Chats>({

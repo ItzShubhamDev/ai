@@ -1,14 +1,61 @@
 'use client';
 
-import { Message, useChat } from 'ai/react';
-import { FaPlus, FaRegCopy, FaRegThumbsDown, FaRegThumbsUp, FaRegUser } from 'react-icons/fa6';
+import { type CoreMessage } from 'ai';
+import { FormEvent, useEffect, useState } from 'react';
+import { continueConversation, createConversation, getConversation, setConversation } from './actions';
+import { readStreamableValue } from 'ai/rsc';
+
+import { FaPlus, FaRegCopy, FaRegUser } from 'react-icons/fa6';
 import { IoSend } from 'react-icons/io5';
 import { SiOpenai } from 'react-icons/si';
 import Markdown from 'react-markdown';
+import { useRouter, useSearchParams } from 'next/navigation';
+
+export const maxDuration = 30;
 
 export default function Chat() {
-    const { messages, input, handleInputChange, handleSubmit } = useChat();
-    console.log(messages);
+    const [messages, setMessages] = useState<CoreMessage[]>([]);
+    const [input, setInput] = useState('');
+    const searchParams = useSearchParams();
+    const [conversationId, setConversationId] = useState<string | null>(null);
+    const router = useRouter();
+
+    useEffect(() => {
+        if (searchParams.has('id')) {
+            const id = searchParams.get('id') as string;
+            setConversationId(id);
+            // router.replace(`?id=${id}`);
+            // getConversation({ id }).then(setMessages);
+        }
+    }, [searchParams]);
+
+    const handleSubmit = async (e: FormEvent) => {
+        e.preventDefault();
+        const newMessages: CoreMessage[] = [...messages, { role: 'user', content: input }];
+        setMessages(newMessages);
+        setInput('');
+
+        const res = await continueConversation(newMessages);
+        console.log(res.data);
+
+        for await (const message of readStreamableValue(res.message)) {
+            setMessages([...newMessages, {
+                role: 'assistant',
+                content: message as string,
+            }]);
+
+            // Save conversation to database
+            if (conversationId) {
+                setConversation({
+                    id: conversationId, messages: [...newMessages, {
+                        role: 'assistant',
+                        content: message as string,
+                    }]
+                });
+            }
+        }
+    }
+
     return (
         <div className="flex h-full w-full flex-col" >
             {/* Prompt Messages */}
@@ -16,8 +63,8 @@ export default function Chat() {
                 className="flex-1 overflow-y-auto rounded-lg bg-slate-200 p-4 text-sm leading-6 text-slate-900 dark:bg-slate-800 dark:text-slate-300 sm:text-base sm:leading-7"
             >
                 {
-                    messages.map(message => (
-                        <MessageBox key={message.id} {...message} />
+                    messages.map((message, i) => (
+                        <MessageBox key={i} {...message} />
                     ))
                 }
             </div >
@@ -35,7 +82,7 @@ export default function Chat() {
                     <input
                         id="chat-input"
                         value={input}
-                        onChange={handleInputChange}
+                        onChange={e => setInput(e.target.value)}
                         className="block w-full p-2 text-sm text-slate-900 dark:bg-slate-800 focus:outline-none dark:text-slate-200 dark:placeholder-slate-400 sm:text-base"
                         placeholder="Enter your prompt"
                         required
@@ -52,7 +99,7 @@ export default function Chat() {
     );
 }
 
-const MessageBox = (message: Message) => {
+const MessageBox = (message: CoreMessage) => {
     return (
         <>
             {message.role === 'user' ? (
@@ -60,7 +107,7 @@ const MessageBox = (message: Message) => {
                     <FaRegUser className="mr-2 text-2xl sm:mr-4" />
 
                     <div className="flex max-w-3xl items-center">
-                        <p>{message.content}</p>
+                        <Markdown>{message.content as string}</Markdown>
                     </div>
                 </div>
             ) : (
@@ -71,7 +118,7 @@ const MessageBox = (message: Message) => {
 
                     <div className="flex max-w-4xl items-center rounded-xl">
                         <div className="text-wrap">
-                            <Markdown>{message.content}</Markdown>
+                            <Markdown>{message.content as string}</Markdown>
                         </div>
                     </div>
                     <div className="mb-2 flex w-full h-full flex-row justify-end items-start gap-x-2 text-slate-500">
