@@ -17,6 +17,6 @@ export async function POST(req: Request) {
     })
 
     const res = await streamText({ model: openai('gpt-4o-mini'), messages: convertToCoreMessages(messages) });
-
+    console.log(convertToCoreMessages(messages));
     return res.toDataStreamResponse();
 }

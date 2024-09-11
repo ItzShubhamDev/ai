@@ -1,4 +1,4 @@
-import { TbMessage2Plus, TbMessage2Search } from "react-icons/tb";
+import { TbMessage2Plus, TbMessage2Search, TbSettings } from "react-icons/tb";
 
 export default function ChatHistory() {
     return (
@@ -69,6 +69,10 @@ export default function ChatHistory() {
                     >
                         <TbMessage2Plus className="h-6 w-6" />
                         <span>New Chat</span>
+                    </button>
+                    <button className="flex w-full justify-between border border-slate-300 rounded-lg p-4 text-sm font-medium mt-2">
+                        <span>Settings</span>
+                        <TbSettings className="h-6 w-6" />
                     </button>
                 </div>
             </div>

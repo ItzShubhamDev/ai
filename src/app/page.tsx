@@ -13,7 +13,7 @@ export default function Chat() {
         <div className="flex h-full w-full flex-col" >
             {/* Prompt Messages */}
             < div
-                className="flex-1 overflow-y-auto rounded-xl bg-slate-200 p-4 text-sm leading-6 text-slate-900 dark:bg-slate-800 dark:text-slate-300 sm:text-base sm:leading-7"
+                className="flex-1 overflow-y-auto rounded-lg bg-slate-200 p-4 text-sm leading-6 text-slate-900 dark:bg-slate-800 dark:text-slate-300 sm:text-base sm:leading-7"
             >
                 {
                     messages.map(message => (
@@ -22,9 +22,9 @@ export default function Chat() {
                 }
             </div >
             {/* Prompt message input */}
-            < form className="mt-2" onSubmit={handleSubmit} >
+            <form className="mt-2" onSubmit={handleSubmit} >
                 <label htmlFor="chat-input" className="sr-only">Enter your prompt</label>
-                <div className="flex rounded-xl border-2 border-slate-300 px-2">
+                <div className="flex rounded-lg border-2 border-slate-300 px-2">
                     <button
                         type="button"
                         className="text-slate-500 hover:text-blue-500 dark:text-slate-400 dark:hover:text-blue-500"
