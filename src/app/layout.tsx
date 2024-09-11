@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import "./globals.css";
+import ChatHistory from "@/components/chatHistory";
 
 const roboto = Roboto({ weight: ['400', '500'], subsets: ['latin'] });
 
@@ -20,7 +21,10 @@ export default function RootLayout({
       <body
         className={`${roboto.className} antialiased`}
       >
-        {children}
+        <div className="flex h-screen w-full p-2 space-x-2">
+          <ChatHistory />
+          {children}
+        </div>
       </body>
     </html>
   );
