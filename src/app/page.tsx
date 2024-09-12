@@ -18,14 +18,14 @@ export default function Chat() {
     const [input, setInput] = useState('');
     const searchParams = useSearchParams();
     const [conversationId, setConversationId] = useState<string | null>(null);
+    const [finalized, setFinalized] = useState<string>('');
     const router = useRouter();
 
     useEffect(() => {
         if (searchParams.has('id')) {
             const id = searchParams.get('id') as string;
             setConversationId(id);
-            // router.replace(`?id=${id}`);
-            // getConversation({ id }).then(setMessages);
+            fetch(`/api/chats/${id}`).then(res => res.json().then(setMessages));
         }
     }, [searchParams]);
 
@@ -35,25 +35,31 @@ export default function Chat() {
         setMessages(newMessages);
         setInput('');
 
-        const res = await continueConversation(newMessages);
-        console.log(res.data);
-
+        const newChat = messages.length === 0;
+        const res = await continueConversation(newMessages, newChat);
+        if (res.data) {
+            setConversationId(res.data);
+            router.replace(`?id=${res.data}`);
+        }
         for await (const message of readStreamableValue(res.message)) {
             setMessages([...newMessages, {
                 role: 'assistant',
                 content: message as string,
             }]);
-
-            // Save conversation to database
-            if (conversationId) {
-                setConversation({
-                    id: conversationId, messages: [...newMessages, {
-                        role: 'assistant',
-                        content: message as string,
-                    }]
-                });
-            }
+            console.log('Message:', message);
+            setFinalized(message as string);
         }
+
+        setTimeout(async () => {
+            console.log('Saving messages', finalized);
+            const r = await fetch(`/api/chats/${conversationId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ messages: [{ role: 'user', content: input }, messages.pop()] }),
+            });
+        }, maxDuration * 1000);
     }
 
     return (
