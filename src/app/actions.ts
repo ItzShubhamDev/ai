@@ -7,23 +7,31 @@ import chats, { Chats } from '@/models/chats';
 import connectDB from '@/lib/connectDb';
 import mongoose from 'mongoose';
 
-export async function continueConversation(messages: CoreMessage[], newChat?: boolean) {
+export async function continueConversation(messages: CoreMessage[], id?: string) {
+    await connectDB();
+    let chatId: string | null = null;
+
     const openai = createOpenAI({
         baseURL: 'https://models.inference.ai.azure.com',
         apiKey: process.env.GITHUB_TOKEN,
     });
 
+    if (!id) {
+        chatId = await createConversation({ name: 'New Conversation' });
+    } else {
+        chatId = id;
+    }
+
     const result = await streamText({
         model: openai('gpt-4o-mini'),
         messages,
+        onFinish: async (e) => {
+            await setConversation({ id: chatId as string, messages: [...messages, { role: "assistant", content: e.text }] });
+        },
     });
 
-    let data: string | null = null;
     const stream = createStreamableValue(result.textStream);
-    if (newChat) {
-        data = await createConversation({ name: 'New Conversation' });
-    }
-    return { message: stream.value, data };
+    return { message: stream.value, chatId };
 }
 
 export async function getConversation(id: string) {

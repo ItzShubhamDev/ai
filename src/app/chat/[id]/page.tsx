@@ -2,7 +2,7 @@
 
 import { type CoreMessage } from 'ai';
 import { FormEvent, useEffect, useState } from 'react';
-import { continueConversation, createConversation, getConversation, setConversation } from './actions';
+import { continueConversation, createConversation, getConversation, setConversation } from '@/app/actions';
 import { readStreamableValue } from 'ai/rsc';
 
 import { FaPlus, FaRegCopy, FaRegUser } from 'react-icons/fa6';
@@ -13,10 +13,14 @@ import { useRouter } from 'next/navigation';
 
 export const maxDuration = 30;
 
-export default function Chat() {
+export default function Page({ params }: { params: { id: string } }) {
     const [messages, setMessages] = useState<CoreMessage[]>([]);
     const [input, setInput] = useState('');
-    const router = useRouter();
+    const id = params.id;
+
+    useEffect(() => {
+        fetch(`/api/chats/${id}`).then(res => res.json().then(setMessages));
+    }, [id]);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -24,15 +28,13 @@ export default function Chat() {
         setMessages(newMessages);
         setInput('');
 
-        const res = await continueConversation(newMessages);
+        const res = await continueConversation(newMessages, id);
         for await (const message of readStreamableValue(res.message)) {
             setMessages([...newMessages, {
                 role: 'assistant',
                 content: message as string,
             }]);
         }
-
-        router.push(`/chat/${res.chatId}`);
     }
 
     return (
@@ -83,7 +85,7 @@ const MessageBox = (message: CoreMessage) => {
         <>
             {message.role === 'user' ? (
                 <div className="flex flex-row px-2 py-4 sm:px-4">
-                    <FaRegUser className="mr-2 text-2xl sm:mr-4" />
+                    <FaRegUser className="mr-2 sm:mr-4" height={40} width={40}/>
 
                     <div className="flex max-w-3xl items-center">
                         <Markdown>{message.content as string}</Markdown>
@@ -93,7 +95,7 @@ const MessageBox = (message: CoreMessage) => {
                 <div
                     className="mb-4 flex rounded-xl bg-slate-50 px-2 py-6 dark:bg-slate-900 sm:px-4"
                 >
-                    <SiOpenai className="mr-2 text-4xl sm:mr-4" />
+                    <SiOpenai className="mr-2 sm:mr-4" height={40} width={40} />
 
                     <div className="flex max-w-4xl items-center rounded-xl">
                         <div className="text-wrap">
@@ -102,7 +104,7 @@ const MessageBox = (message: CoreMessage) => {
                     </div>
                     <div className="mb-2 flex w-full h-full flex-row justify-end items-start gap-x-2 text-slate-500">
                         <button className="hover:text-blue-600" type="button">
-                            <FaRegCopy className="h-5 w-5" />
+                            <FaRegCopy height={20} width={20}/>
                         </button>
                     </div>
                 </div>
